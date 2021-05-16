@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <ctime>
+#include <algorithm>
 
 class Network {
 private:
@@ -12,26 +13,26 @@ private:
     std::vector<std::vector<double>> layerBiases;
     std::vector<std::vector<std::vector<double>>> layerWeights;
     std::mt19937 rGen;
-    std::uniform_real_distribution<> arthas;
+    std::uniform_real_distribution<> distribution;
 
-    std::pair<std::vector<std::vector<double>>, std::vector<double>>
+    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
     backPropagate(const std::vector<double> &test, int label);
 
     void applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate);
 
-    std::vector<double> costDerivative(const std::vector<double> &output, int label);
+    static std::vector<double> costDerivative(const std::vector<double> &output, int label);
 
-    double sigmoid(double z);
+    static double sigmoid(double z);
 
-    std::vector<double> sigmoid(const std::vector<double> &z);
+    static std::vector<double> sigmoid(const std::vector<double> &z);
 
-    double sigmoidPrime(double z);
+    static double sigmoidPrime(double z);
 
     static std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v);
 
     static std::vector<double> sum(const std::vector<double> &l, const std::vector<double> &r);
 
-    std::vector<double> sigmoidPrime(const std::vector<double> &z);
+    static std::vector<double> sigmoidPrime(const std::vector<double> &z);
 
 public:
     std::vector<double> feedForward(std::vector<double> input);
