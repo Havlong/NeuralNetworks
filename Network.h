@@ -5,6 +5,7 @@
 #include <random>
 #include <ctime>
 #include <algorithm>
+#include <iostream>
 
 class Network {
 private:
@@ -28,10 +29,6 @@ private:
 
     static double sigmoidPrime(double z);
 
-    static std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v);
-
-    static std::vector<double> sum(const std::vector<double> &l, const std::vector<double> &r);
-
     static std::vector<double> sigmoidPrime(const std::vector<double> &z);
 
 public:
@@ -39,7 +36,7 @@ public:
 
     void sgd(int epochsCount, int batchSize, double learningRate);
 
-    int evaluate();
+    double evaluate();
 
     Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
             std::vector<std::pair<std::vector<double>, int>> testData,

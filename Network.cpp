@@ -1,28 +1,95 @@
 #include "Network.h"
 
 /**
+ * @return Sum of two vectors
+ */
+std::vector<double> operator+(const std::vector<double> &a, const std::vector<double> &b) {
+    std::vector<double> result(a.size());
+    for (int i = 0; i < a.size(); ++i) {
+        result[i] = a[i] + b[i];
+    }
+    return result;
+}
+
+/**
+ * @return Hadamard product of two vectors
+ */
+std::vector<double> operator*(const std::vector<double> &a, const std::vector<double> &b) {
+    std::vector<double> result(a.size());
+    for (int i = 0; i < a.size(); ++i) {
+        result[i] = a[i] + b[i];
+    }
+    return result;
+}
+
+/**
+ * Matrix product of vector and matrix
+ * @return Result of operation
+ */
+std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+    std::vector<double> dot(m.front().size());
+    for (int i = 0; i < (int) dot.size(); ++i) {
+        for (int j = 0; j < (int) v.size(); ++j) {
+            dot[i] += m[j][i] * v[j];
+        }
+    }
+    return dot;
+}
+
+std::vector<double> transposedDot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+    std::vector<double> dot(v.size());
+    for (int i = 0; i < (int) m.size(); ++i) {
+        for (int j = 0; j < (int) v.size(); ++j) {
+            dot[j] += m[i][j] * v[i];
+        }
+    }
+    return dot;
+}
+
+std::vector<std::vector<double>> transposedDot(const std::vector<double> &a, const std::vector<double> &b) {
+    std::vector<std::vector<double>> result(a.size(), std::vector<double>(b.size()));
+    for (int i = 0; i < a.size(); ++i) {
+        for (int j = 0; j < b.size(); ++j) {
+            result[i][j] = a[i] * b[j];
+        }
+    }
+    return result;
+}
+
+/**
  * Feed-forwards test data into the neural net and determines the amount of correct answers
  *
- * @return Amount of correct answers
+ * @return Percentage of correct answers
  */
-int Network::evaluate() {
+double Network::evaluate() {
     int amount = 0;
     for (auto &[x, y]: testData) {
         auto result = feedForward(x);
         int resultLabel = std::max_element(result.begin(), result.end()) - result.begin();
         amount += (resultLabel == y);
     }
-    return amount;
+    return amount * 100.0 / testData.size();
 }
 
-//TODO implement SGD mechanisms
 void Network::sgd(int epochsCount, int batchSize, double learningRate) {
-
+    for (int epoch = 0; epoch < epochsCount; ++epoch) {
+        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
+        for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
+            std::vector<std::pair<std::vector<double>, int>> batch;
+            for (int i = batchStart; i < trainingData.size() && i < batchStart + batchSize; ++i) {
+                batch.push_back(trainingData[i]);
+            }
+            applyMiniBatch(batch, learningRate);
+        }
+        double successRate = evaluate();
+        std::cout << "Epoch #" << epoch << " is completed\n";
+        std::cout << "Success rate is " << successRate << "%\n\n";
+    }
 }
 
 std::vector<double> Network::feedForward(std::vector<double> input) {
     for (int i = 0; i < (int) layerSizes.size(); ++i) {
-        input = sum(dot(layerWeights[i], input), layerBiases[i]);
+        input = dot(layerWeights[i], input) + layerBiases[i];
     }
     return input;
 }
@@ -97,10 +164,47 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
     }
 }
 
-//TODO implement back propagation mechanisms
 std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
 Network::backPropagate(const std::vector<double> &test, int label) {
-    return std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>();
+    // Initialize biases shape
+    std::vector<std::vector<double>> nabla_b(layerBiases.size());
+    for (int i = 0; i < nabla_b.size(); ++i) {
+        nabla_b[i] = std::vector<double>(layerBiases[i].size());
+    }
+
+    // Initialize weights shape
+    std::vector<std::vector<std::vector<double>>> nabla_w(layerWeights.size());
+    for (int i = 0; i < nabla_w.size(); ++i) {
+        nabla_w[i] = std::vector<std::vector<double>>(layerWeights[i].size());
+        for (int j = 0; j < nabla_w[i].size(); ++j) {
+            nabla_w[i][j] = std::vector<double>(layerWeights[i][j].size());
+        }
+    }
+
+    // Feed-forward
+    std::vector<double> currentActivation = std::vector<double>(test);
+    std::vector<std::vector<double>> activations = {currentActivation};
+    std::vector<std::vector<double>> layerFunction;
+    for (int layer = 0; layer < layerWeights.size(); ++layer) {
+        auto z = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
+        layerFunction.push_back(z);
+        currentActivation = sigmoid(z);
+        activations.push_back(currentActivation);
+    }
+
+    // Backwards pass
+    std::vector<double> delta = costDerivative(activations.back(), label) * sigmoidPrime(layerFunction.back());
+    nabla_b.back() = delta;
+    nabla_w.back() = transposedDot(activations[activations.size() - 2], delta);
+
+    for (int layer = 3; layer < layerSizes.size(); ++layer) {
+        auto z = layerFunction[layerFunction.size() - layer];
+        delta = transposedDot(layerWeights[layerFunction.size() - layer + 1], delta) * sigmoidPrime(z);
+        nabla_b[nabla_b.size() - layer] = delta;
+        nabla_w[nabla_w.size() - layer] = transposedDot(activations[activations.size() - layer + 1], delta);
+    }
+
+    return {nabla_w, nabla_b};
 }
 
 Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
@@ -137,20 +241,3 @@ Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
     }
 }
 
-std::vector<double> Network::dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
-    std::vector<double> dot(m.front().size());
-    for (int i = 0; i < (int) dot.size(); ++i) {
-        for (int j = 0; j < (int) v.size(); ++j) {
-            dot[i] += m[j][i] * v[j];
-        }
-    }
-    return dot;
-}
-
-std::vector<double> Network::sum(const std::vector<double> &l, const std::vector<double> &r) {
-    std::vector<double> sum(l.size());
-    for (int i = 0; i < (int) l.size(); ++i) {
-        sum[i] = l[i] + r[i];
-    }
-    return sum;
-}
