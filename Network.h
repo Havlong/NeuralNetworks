@@ -21,6 +21,8 @@ private:
 
     void applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate);
 
+    void resizeLayers();
+
     static std::vector<double> costDerivative(const std::vector<double> &output, int label);
 
     static double sigmoid(double z);

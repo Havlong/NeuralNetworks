@@ -37,10 +37,10 @@ std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::ve
 }
 
 std::vector<double> transposedDot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
-    std::vector<double> dot(v.size());
+    std::vector<double> dot(m.size());
     for (int i = 0; i < (int) m.size(); ++i) {
         for (int j = 0; j < (int) v.size(); ++j) {
-            dot[j] += m[i][j] * v[i];
+            dot[i] += m[i][j] * v[j];
         }
     }
     return dot;
@@ -83,13 +83,13 @@ void Network::sgd(int epochsCount, int batchSize, double learningRate) {
         }
         double successRate = evaluate();
         std::cout << "Epoch #" << epoch << " is completed\n";
-        std::cout << "Success rate is " << successRate << "%\n\n";
+        std::cout << "Success rate is " << successRate << "%\n" << std::endl;
     }
 }
 
 std::vector<double> Network::feedForward(std::vector<double> input) {
-    for (int i = 0; i < (int) layerSizes.size(); ++i) {
-        input = dot(layerWeights[i], input) + layerBiases[i];
+    for (int layer = 0; layer < (int) layerWeights.size(); ++layer) {
+        input = dot(layerWeights[layer], input) + layerBiases[layer];
     }
     return input;
 }
@@ -117,7 +117,7 @@ std::vector<double> Network::sigmoidPrime(const std::vector<double> &z) {
 std::vector<double> Network::costDerivative(const std::vector<double> &output, int label) {
     std::vector<double> result(output.size());
     for (int i = 0; i < output.size(); ++i) {
-        result[i] = output[i] - label == i ? 1.0 : 0.0;
+        result[i] = output[i] - (label == i ? 1.0 : 0.0);
     }
     return result;
 }
@@ -126,7 +126,7 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
     // Initialize biases shape
     std::vector<std::vector<double>> deltaBiases(layerBiases.size());
     for (int i = 0; i < deltaBiases.size(); ++i) {
-        deltaBiases[i] = std::vector<double>(layerBiases[i].size());
+        deltaBiases[i] = std::vector<double>(layerBiases[i].size(), 0.0);
     }
 
     // initialize weights shape
@@ -134,7 +134,7 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
     for (int i = 0; i < deltaWeights.size(); ++i) {
         deltaWeights[i] = std::vector<std::vector<double>>(layerWeights[i].size());
         for (int j = 0; j < deltaWeights[i].size(); ++j) {
-            deltaWeights[i][j] = std::vector<double>(layerWeights[i][j].size());
+            deltaWeights[i][j] = std::vector<double>(layerWeights[i][j].size(), 0.0);
         }
     }
 
@@ -145,7 +145,7 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
                 deltaBiases[layer][neuron] += nabla_b[layer][neuron];
             }
             for (int from = 0; from < deltaWeights[layer].size(); ++from) {
-                for (int to = 0; to < deltaWeights[layer].size(); ++to) {
+                for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
                     deltaWeights[layer][from][to] += nabla_w[layer][from][to];
                 }
             }
@@ -157,7 +157,7 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
             layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / miniBatch.size());
         }
         for (int from = 0; from < deltaWeights[layer].size(); ++from) {
-            for (int to = 0; to < deltaWeights[layer].size(); ++to) {
+            for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
                 layerWeights[layer][from][to] -= deltaWeights[layer][from][to] * (learningRate / miniBatch.size());
             }
         }
@@ -197,11 +197,11 @@ Network::backPropagate(const std::vector<double> &test, int label) {
     nabla_b.back() = delta;
     nabla_w.back() = transposedDot(activations[activations.size() - 2], delta);
 
-    for (int layer = 3; layer < layerSizes.size(); ++layer) {
+    for (int layer = 2; layer < layerSizes.size(); ++layer) {
         auto z = layerFunction[layerFunction.size() - layer];
-        delta = transposedDot(layerWeights[layerFunction.size() - layer + 1], delta) * sigmoidPrime(z);
+        delta = transposedDot(layerWeights[layerWeights.size() - layer + 1], delta) * sigmoidPrime(z);
         nabla_b[nabla_b.size() - layer] = delta;
-        nabla_w[nabla_w.size() - layer] = transposedDot(activations[activations.size() - layer + 1], delta);
+        nabla_w[nabla_w.size() - layer] = transposedDot(activations[activations.size() - layer - 1], delta);
     }
 
     return {nabla_w, nabla_b};
@@ -211,21 +211,11 @@ Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
                  std::vector<std::pair<std::vector<double>, int>> testData,
                  std::vector<int> layerSizes) : trainingData(std::move(trainingData)), testData(std::move(testData)),
                                                 layerSizes(std::move(layerSizes)) {
+    resizeLayers();
+
     rGen.seed(time(nullptr));
     distribution = std::uniform_real_distribution<>(0, 1);
 
-    layerBiases.resize(layerSizes.size() - 1);
-    for (int layer = 0; layer < (int) layerSizes.size() - 1; ++layer) {
-        layerBiases[layer].resize(layerSizes[layer + 1]);
-    }
-
-    layerWeights.resize(layerSizes.size() - 1);
-    for (int layer = 0; layer < (int) layerSizes.size() - 1; ++layer) {
-        layerWeights[layer].resize(layerSizes[layer]);
-        for (int layerFrom = 0; layerFrom < (int) layerWeights[layer].size(); ++layerFrom) {
-            layerWeights[layer][layerFrom].resize(layerSizes[layer + 1]);
-        }
-    }
     for (auto &layerBias : layerBiases) {
         for (double &bias : layerBias) {
             bias = distribution(rGen);
@@ -237,6 +227,21 @@ Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
             for (double &weight : weights) {
                 weight = distribution(rGen);
             }
+        }
+    }
+}
+
+void Network::resizeLayers() {
+    layerBiases.resize(layerSizes.size() - 1);
+    for (int layer = 0; layer < (int) layerSizes.size() - 1; ++layer) {
+        layerBiases[layer].resize(layerSizes[layer + 1]);
+    }
+
+    layerWeights.resize(layerSizes.size() - 1);
+    for (int layer = 0; layer < (int) layerSizes.size() - 1; ++layer) {
+        layerWeights[layer].resize(layerSizes[layer]);
+        for (int layerFrom = 0; layerFrom < (int) layerWeights[layer].size(); ++layerFrom) {
+            layerWeights[layer][layerFrom].resize(layerSizes[layer + 1]);
         }
     }
 }
