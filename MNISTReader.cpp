@@ -15,7 +15,7 @@ void reverseInt(uint32_t &source) {
     b3 = (source >> 16) & 255;
     b4 = (source >> 24) & 255;
 
-    source = ((uint32_t) b1 << 24) + ((uint32_t) b2 << 16) + ((uint32_t) b3 << 8) + (uint32_t) b4;
+    source = ((uint32_t) b1 << 24) | ((uint32_t) b2 << 16) | ((uint32_t) b3 << 8) | (uint32_t) b4;
 }
 
 std::vector<std::pair<std::vector<double>, int>>

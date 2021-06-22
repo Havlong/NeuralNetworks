@@ -17,7 +17,7 @@ std::vector<double> operator+(const std::vector<double> &a, const std::vector<do
 std::vector<double> operator*(const std::vector<double> &a, const std::vector<double> &b) {
     std::vector<double> result(a.size());
     for (int i = 0; i < a.size(); ++i) {
-        result[i] = a[i] + b[i];
+        result[i] = a[i] * b[i];
     }
     return result;
 }
@@ -65,25 +65,30 @@ double Network::evaluate() {
     int amount = 0;
     for (auto &[x, y]: testData) {
         auto result = feedForward(x);
-        int resultLabel = std::max_element(result.begin(), result.end()) - result.begin();
+        int resultLabel = (int) (std::max_element(result.begin(), result.end()) - result.begin());
         amount += (resultLabel == y);
     }
-    return amount * 100.0 / testData.size();
+    return amount * 100 / ((double) testData.size());
 }
 
 void Network::sgd(int epochsCount, int batchSize, double learningRate) {
-    for (int epoch = 0; epoch < epochsCount; ++epoch) {
+    for (int epoch = 1; epoch <= epochsCount; ++epoch) {
         std::shuffle(trainingData.begin(), trainingData.end(), rGen);
+        int correctAmount = 0;
+        std::vector<std::pair<std::vector<double>, int>> batch;
         for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
-            std::vector<std::pair<std::vector<double>, int>> batch;
             for (int i = batchStart; i < trainingData.size() && i < batchStart + batchSize; ++i) {
                 batch.push_back(trainingData[i]);
             }
-            applyMiniBatch(batch, learningRate);
+            correctAmount += applyMiniBatch(batch, learningRate);
+            batch.clear();
         }
+
         double successRate = evaluate();
         std::cout << "Epoch #" << epoch << " is completed\n";
-        std::cout << "Success rate is " << successRate << "%\n" << std::endl;
+        std::cout << "Success rate on training data is " << correctAmount * 100 / ((double) trainingData.size()) << '%'
+                  << std::endl;
+        std::cout << "Success rate on testing data is " << successRate << "%\n" << std::endl;
     }
 }
 
@@ -95,7 +100,7 @@ std::vector<double> Network::feedForward(std::vector<double> input) {
 }
 
 double Network::sigmoid(double z) {
-    return 1.0 / (1.0 - exp(-z));
+    return 1.0 / (1.0 + exp(-z));
 }
 
 std::vector<double> Network::sigmoid(const std::vector<double> &z) {
@@ -117,19 +122,19 @@ std::vector<double> Network::sigmoidPrime(const std::vector<double> &z) {
 std::vector<double> Network::costDerivative(const std::vector<double> &output, int label) {
     std::vector<double> result(output.size());
     for (int i = 0; i < output.size(); ++i) {
-        result[i] = output[i] - (label == i ? 1.0 : 0.0);
+        result[i] = (label == i ? -1.0 : 0.0) + output[i];
     }
     return result;
 }
 
-void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate) {
+int Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate) {
     // Initialize biases shape
     std::vector<std::vector<double>> deltaBiases(layerBiases.size());
     for (int i = 0; i < deltaBiases.size(); ++i) {
         deltaBiases[i] = std::vector<double>(layerBiases[i].size(), 0.0);
     }
 
-    // initialize weights shape
+    // Initialize weights shape
     std::vector<std::vector<std::vector<double>>> deltaWeights(layerWeights.size());
     for (int i = 0; i < deltaWeights.size(); ++i) {
         deltaWeights[i] = std::vector<std::vector<double>>(layerWeights[i].size());
@@ -138,12 +143,19 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
         }
     }
 
+    int correctAmount = 0;
     for (const auto &[x, y]: miniBatch) {
+        auto result = feedForward(x);
+        int resultLabel = (int) (std::max_element(result.begin(), result.end()) - result.begin());
+        correctAmount += (resultLabel == y);
+
         auto[nabla_w, nabla_b] = backPropagate(x, y);
         for (int layer = 0; layer < deltaBiases.size(); ++layer) {
             for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
                 deltaBiases[layer][neuron] += nabla_b[layer][neuron];
             }
+        }
+        for (int layer = 0; layer < deltaWeights.size(); ++layer) {
             for (int from = 0; from < deltaWeights[layer].size(); ++from) {
                 for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
                     deltaWeights[layer][from][to] += nabla_w[layer][from][to];
@@ -154,14 +166,18 @@ void Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, in
 
     for (int layer = 0; layer < deltaBiases.size(); ++layer) {
         for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
-            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / miniBatch.size());
+            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
         }
+    }
+    for (int layer = 0; layer < deltaWeights.size(); ++layer) {
         for (int from = 0; from < deltaWeights[layer].size(); ++from) {
             for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
-                layerWeights[layer][from][to] -= deltaWeights[layer][from][to] * (learningRate / miniBatch.size());
+                layerWeights[layer][from][to] -=
+                        deltaWeights[layer][from][to] * (learningRate / ((double) miniBatch.size()));
             }
         }
     }
+    return correctAmount;
 }
 
 std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
@@ -214,16 +230,16 @@ Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
     resizeLayers();
 
     rGen.seed(time(nullptr));
-    distribution = std::uniform_real_distribution<>(0, 1);
+    distribution = std::normal_distribution<>();
 
-    for (auto &layerBias : layerBiases) {
-        for (double &bias : layerBias) {
+    for (auto &layer : layerBiases) {
+        for (double &bias : layer) {
             bias = distribution(rGen);
         }
     }
 
-    for (auto &layerWeight: layerWeights) {
-        for (auto &weights: layerWeight) {
+    for (auto &layer: layerWeights) {
+        for (auto &weights: layer) {
             for (double &weight : weights) {
                 weight = distribution(rGen);
             }

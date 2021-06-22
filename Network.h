@@ -14,12 +14,12 @@ private:
     std::vector<std::vector<double>> layerBiases;
     std::vector<std::vector<std::vector<double>>> layerWeights;
     std::mt19937 rGen;
-    std::uniform_real_distribution<> distribution;
+    std::normal_distribution<> distribution;
 
     std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
     backPropagate(const std::vector<double> &test, int label);
 
-    void applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate);
+    int applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate);
 
     void resizeLayers();
 
