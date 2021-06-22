@@ -19,24 +19,24 @@ private:
     std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
     backPropagate(const std::vector<double> &test, int label);
 
-    int applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate);
+    int applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, const double &learningRate);
 
     void resizeLayers();
 
-    static std::vector<double> costDerivative(const std::vector<double> &output, int label);
+    static std::vector<double> costDerivative(const std::vector<double> &output, const int &label);
 
-    static double sigmoid(double z);
+    static double sigmoid(const double &z);
 
     static std::vector<double> sigmoid(const std::vector<double> &z);
 
-    static double sigmoidPrime(double z);
+    static double sigmoidPrime(const double &z);
 
     static std::vector<double> sigmoidPrime(const std::vector<double> &z);
 
 public:
-    std::vector<double> feedForward(std::vector<double> input);
+    std::vector<double> feedForward(const std::vector<double> &input);
 
-    void sgd(int epochsCount, int batchSize, double learningRate);
+    void sgd(const int &epochsCount, const int &batchSize, const double &learningRate);
 
     double evaluate();
 

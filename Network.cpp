@@ -4,6 +4,8 @@
  * @return Sum of two vectors
  */
 std::vector<double> operator+(const std::vector<double> &a, const std::vector<double> &b) {
+    if (a.size() != b.size())
+        exit(-1);
     std::vector<double> result(a.size());
     for (int i = 0; i < a.size(); ++i) {
         result[i] = a[i] + b[i];
@@ -15,6 +17,8 @@ std::vector<double> operator+(const std::vector<double> &a, const std::vector<do
  * @return Hadamard product of two vectors
  */
 std::vector<double> operator*(const std::vector<double> &a, const std::vector<double> &b) {
+    if (a.size() != b.size())
+        exit(-1);
     std::vector<double> result(a.size());
     for (int i = 0; i < a.size(); ++i) {
         result[i] = a[i] * b[i];
@@ -27,6 +31,8 @@ std::vector<double> operator*(const std::vector<double> &a, const std::vector<do
  * @return Result of operation
  */
 std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+    if (m.size() != v.size())
+        exit(-1);
     std::vector<double> dot(m.front().size());
     for (int i = 0; i < (int) dot.size(); ++i) {
         for (int j = 0; j < (int) v.size(); ++j) {
@@ -37,6 +43,8 @@ std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::ve
 }
 
 std::vector<double> transposedDot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+    if (m.front().size() != v.size())
+        exit(-1);
     std::vector<double> dot(m.size());
     for (int i = 0; i < (int) m.size(); ++i) {
         for (int j = 0; j < (int) v.size(); ++j) {
@@ -71,9 +79,9 @@ double Network::evaluate() {
     return amount * 100 / ((double) testData.size());
 }
 
-void Network::sgd(int epochsCount, int batchSize, double learningRate) {
+void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate) {
     for (int epoch = 1; epoch <= epochsCount; ++epoch) {
-        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
+//        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
         int correctAmount = 0;
         std::vector<std::pair<std::vector<double>, int>> batch;
         for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
@@ -92,42 +100,50 @@ void Network::sgd(int epochsCount, int batchSize, double learningRate) {
     }
 }
 
-std::vector<double> Network::feedForward(std::vector<double> input) {
+std::vector<double> Network::feedForward(const std::vector<double> &input) {
+    std::vector<double> currentActivation(input);
     for (int layer = 0; layer < (int) layerWeights.size(); ++layer) {
-        input = dot(layerWeights[layer], input) + layerBiases[layer];
+        auto z = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
+        currentActivation.clear();
+        currentActivation = z;
     }
-    return input;
+    return currentActivation;
 }
 
-double Network::sigmoid(double z) {
+double Network::sigmoid(const double &z) {
     return 1.0 / (1.0 + exp(-z));
 }
 
 std::vector<double> Network::sigmoid(const std::vector<double> &z) {
     std::vector<double> result(z.size());
-    std::transform(z.begin(), z.end(), result.begin(), std::ptr_fun<double, double>(Network::sigmoid));
+    for (int i = 0; i < result.size(); ++i) {
+        result[i] = sigmoid(z[i]);
+    }
     return result;
 }
 
-double Network::sigmoidPrime(double z) {
+double Network::sigmoidPrime(const double &z) {
     return sigmoid(z) * (1.0 - sigmoid(z));
 }
 
 std::vector<double> Network::sigmoidPrime(const std::vector<double> &z) {
     std::vector<double> result(z.size());
-    std::transform(z.begin(), z.end(), result.begin(), std::ptr_fun<double, double>(Network::sigmoidPrime));
-    return result;
-}
-
-std::vector<double> Network::costDerivative(const std::vector<double> &output, int label) {
-    std::vector<double> result(output.size());
-    for (int i = 0; i < output.size(); ++i) {
-        result[i] = (label == i ? -1.0 : 0.0) + output[i];
+    for (int i = 0; i < result.size(); ++i) {
+        result[i] = sigmoidPrime(z[i]);
     }
     return result;
 }
 
-int Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, double learningRate) {
+std::vector<double> Network::costDerivative(const std::vector<double> &output, const int &label) {
+    std::vector<double> result(output.size());
+    for (int i = 0; i < output.size(); ++i) {
+        result[i] = (label == i ? -1 : 0) + output[i];
+    }
+    return result;
+}
+
+int
+Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, const double &learningRate) {
     // Initialize biases shape
     std::vector<std::vector<double>> deltaBiases(layerBiases.size());
     for (int i = 0; i < deltaBiases.size(); ++i) {
@@ -166,7 +182,8 @@ int Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int
 
     for (int layer = 0; layer < deltaBiases.size(); ++layer) {
         for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
-            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
+            layerBiases[layer][neuron] -=
+                    deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
         }
     }
     for (int layer = 0; layer < deltaWeights.size(); ++layer) {
@@ -204,6 +221,7 @@ Network::backPropagate(const std::vector<double> &test, int label) {
     for (int layer = 0; layer < layerWeights.size(); ++layer) {
         auto z = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
         layerFunction.push_back(z);
+        currentActivation.clear();
         currentActivation = sigmoid(z);
         activations.push_back(currentActivation);
     }
