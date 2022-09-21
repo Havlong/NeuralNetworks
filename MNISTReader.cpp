@@ -6,7 +6,7 @@
  * @version v1.0
  */
 
-#include "MNISTReader.h"
+#include "MNISTReader.hpp"
 
 void reverseInt(uint32_t &source) {
     uint8_t b1, b2, b3, b4;
@@ -34,11 +34,11 @@ MNISTReader::readFromFile(const std::string &imagesFile, const std::string &labe
         return {};
     std::vector<std::pair<std::vector<double>, int>> data(size, std::pair(std::vector<double>(rows * columns), 0));
 
-    for (int image = 0; image < size; ++image) {
+    for (auto &[image, _]: data) {
         for (int i = 0; i < rows * columns; ++i) {
             uint8_t x;
             fread(&x, sizeof(x), 1, imageFP);
-            data[image].first[i] = x / 255.0;
+            image[i] = x / 255.0;
         }
     }
     fclose(imageFP);
@@ -52,10 +52,10 @@ MNISTReader::readFromFile(const std::string &imagesFile, const std::string &labe
     if (magic != 2049 || labelSize != size)
         return {};
 
-    for (int image = 0; image < size; ++image) {
-        uint8_t label;
-        fread(&label, sizeof(label), 1, labelFP);
-        data[image].second = label;
+    for (auto &[_, label]: data) {
+        uint8_t x;
+        fread(&x, sizeof(x), 1, labelFP);
+        label = x;
     }
     fclose(labelFP);
     return data;

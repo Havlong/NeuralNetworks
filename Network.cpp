@@ -1,68 +1,4 @@
-#include "Network.h"
-
-/**
- * @return Sum of two vectors
- */
-vec<double> operator+(const vec<double> &a, const vec<double> &b) {
-    if (a.size() != b.size())
-        exit(-1);
-    vec<double> result(a.size());
-    for (int i = 0; i < a.size(); ++i) {
-        result[i] = a[i] + b[i];
-    }
-    return result;
-}
-
-/**
- * @return Hadamard product of two vectors
- */
-vec<double> operator*(const vec<double> &a, const vec<double> &b) {
-    if (a.size() != b.size())
-        exit(-1);
-    vec<double> result(a.size());
-    for (int i = 0; i < a.size(); ++i) {
-        result[i] = a[i] * b[i];
-    }
-    return result;
-}
-
-/**
- * Matrix product of vector and matrix
- * @return Result of operation
- */
-vec<double> dot(const mat<double> &m, const vec<double> &v) {
-    if (m.size() != v.size())
-        exit(-1);
-    vec<double> dot(m.front().size());
-    for (int i = 0; i < (int) dot.size(); ++i) {
-        for (int j = 0; j < (int) v.size(); ++j) {
-            dot[i] += m[j][i] * v[j];
-        }
-    }
-    return dot;
-}
-
-vec<double> transposedDot(const mat<double> &m, const vec<double> &v) {
-    if (m.front().size() != v.size())
-        exit(-1);
-    vec<double> dot(m.size());
-    for (int i = 0; i < (int) m.size(); ++i) {
-        for (int j = 0; j < (int) v.size(); ++j) {
-            dot[i] += m[i][j] * v[j];
-        }
-    }
-    return dot;
-}
-
-mat<double> transposedDot(const vec<double> &a, const vec<double> &b) {
-    mat<double> result(a.size(), std::vector<double>(b.size()));
-    for (int i = 0; i < a.size(); ++i) {
-        for (int j = 0; j < b.size(); ++j) {
-            result[i][j] = a[i] * b[j];
-        }
-    }
-    return result;
-}
+#include "Network.hpp"
 
 /**
  * Feed-forwards test data into the neural net and determines the amount of correct answers
@@ -122,38 +58,6 @@ activation Network::feedForward(const activation &input) {
         currentActivation = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
     }
     return currentActivation;
-}
-
-double Network::sigmoid(const double &z) {
-    return 1.0 / (1.0 + exp(-z));
-}
-
-vec<double> Network::sigmoid(const vec<double> &z) {
-    vec<double> result(z.size());
-    for (int i = 0; i < result.size(); ++i) {
-        result[i] = sigmoid(z[i]);
-    }
-    return result;
-}
-
-double Network::sigmoidPrime(const double &z) {
-    return sigmoid(z) * (1.0 - sigmoid(z));
-}
-
-vec<double> Network::sigmoidPrime(const vec<double> &z) {
-    vec<double> result(z.size());
-    for (int i = 0; i < result.size(); ++i) {
-        result[i] = sigmoidPrime(z[i]);
-    }
-    return result;
-}
-
-vec<double> Network::costDerivative(const activation &output, const label &trueLabel) {
-    activation result(output.size());
-    for (int i = 0; i < output.size(); ++i) {
-        result[i] = (trueLabel == i ? -1 : 0) + output[i];
-    }
-    return result;
 }
 
 int Network::applyMiniBatch(const std::vector<std::pair<activation, label>> &miniBatch, const double &learningRate) {
@@ -239,7 +143,7 @@ std::pair<layer<weights>, layer<biases>> Network::backPropagate(const activation
     }
 
     // Backwards pass
-    vec<double> delta = costDerivative(layerActivation.back(), trueLabel) * sigmoidPrime(layerZ.back());
+    vec<double> delta = costFunction->delta(layerActivation.back(), trueLabel, layerZ.back());
     nabla_b.back() = delta;
     nabla_w.back() = transposedDot(layerActivation[layerActivation.size() - 2], delta);
 
@@ -254,8 +158,9 @@ std::pair<layer<weights>, layer<biases>> Network::backPropagate(const activation
 }
 
 Network::Network(std::vector<std::pair<activation, label>> trainingData,
-                 std::vector<std::pair<activation, label>> testData, layer<int> layerSizes) : trainingData(
-        std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)) {
+                 std::vector<std::pair<activation, label>> testData, layer<int> layerSizes, Cost *costFunction)
+        : trainingData(std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)),
+          costFunction(costFunction) {
 
     resizeLayers();
 

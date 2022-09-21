@@ -1,5 +1,7 @@
-#ifndef NEURALNETWORKS_NETWORK_H
-#define NEURALNETWORKS_NETWORK_H
+#ifndef NEURALNETWORKS_NETWORK_HPP
+#define NEURALNETWORKS_NETWORK_HPP
+
+#include "Cost.hpp"
 
 #include <chrono>
 #include <random>
@@ -8,15 +10,11 @@
 #include <iostream>
 #include <iomanip>
 
-template<typename T> using vec = std::vector<T>;
-template<typename T> using mat = vec<vec<T>>;
-
 template<typename T> using layer = vec<T>;
 
 typedef mat<double> weights;
 typedef vec<double> activation;
 typedef vec<double> biases;
-typedef int label;
 
 class Network {
 private:
@@ -31,6 +29,7 @@ private:
     layer<int> layerSizes;
     layer<biases> layerBiases;
     layer<weights> layerWeights;
+    Cost *costFunction = nullptr;
 
     std::mt19937 rGen = newRandom();
     std::normal_distribution<> distribution = std::normal_distribution<>();
@@ -41,16 +40,6 @@ private:
 
     void resizeLayers();
 
-    static vec<double> costDerivative(const activation &output, const label &trueLabel);
-
-    static double sigmoid(const double &z);
-
-    static vec<double> sigmoid(const vec<double> &z);
-
-    static double sigmoidPrime(const double &z);
-
-    static vec<double> sigmoidPrime(const vec<double> &z);
-
 public:
     activation feedForward(const activation &input);
 
@@ -59,7 +48,7 @@ public:
     int evaluate();
 
     Network(std::vector<std::pair<activation, label>> trainingData, std::vector<std::pair<activation, label>> testData,
-            layer<int> layerSizes);
+            layer<int> layerSizes, Cost *costFunction);
 };
 
 

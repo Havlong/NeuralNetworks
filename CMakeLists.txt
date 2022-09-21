@@ -3,4 +3,4 @@ project(NeuralNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(NeuralNetworks main.cpp Network.cpp MNISTReader.cpp)
+add_executable(NeuralNetworks main.cpp Network.cpp MNISTReader.cpp MathUtils.cpp CrossEntropyCost.cpp QuadraticCost.cpp)
