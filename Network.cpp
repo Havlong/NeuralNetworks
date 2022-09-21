@@ -245,9 +245,6 @@ Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
         std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)) {
     resizeLayers();
 
-    rGen.seed(time(nullptr));
-    distribution = std::normal_distribution<>();
-
     for (auto &layer: layerBiases) {
         for (double &bias: layer) {
             bias = distribution(rGen);

@@ -1,20 +1,27 @@
 #ifndef NEURALNETWORKS_NETWORK_H
 #define NEURALNETWORKS_NETWORK_H
 
-#include <vector>
+#include <chrono>
 #include <random>
-#include <ctime>
+#include <vector>
 #include <algorithm>
 #include <iostream>
 
 class Network {
 private:
+    static inline std::mt19937 newRandom() {
+        auto duration = std::chrono::steady_clock::now().time_since_epoch();
+        auto seed = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+
+        return std::mt19937(seed);
+    }
+
     std::vector<std::pair<std::vector<double>, int>> trainingData, testData;
     std::vector<int> layerSizes;
     std::vector<std::vector<double>> layerBiases;
     std::vector<std::vector<std::vector<double>>> layerWeights;
-    std::mt19937 rGen;
-    std::normal_distribution<> distribution;
+    std::mt19937 rGen = newRandom();
+    std::normal_distribution<> distribution = std::normal_distribution<>();
 
     std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
     backPropagate(const std::vector<double> &test, int label);
