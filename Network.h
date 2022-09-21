@@ -41,8 +41,7 @@ public:
     double evaluate();
 
     Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
-            std::vector<std::pair<std::vector<double>, int>> testData,
-            std::vector<int> layerSizes);
+            std::vector<std::pair<std::vector<double>, int>> testData, std::vector<int> layerSizes);
 };
 
 

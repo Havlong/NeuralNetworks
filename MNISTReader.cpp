@@ -31,7 +31,7 @@ MNISTReader::readFromFile(const std::string &imagesFile, const std::string &labe
     reverseInt(rows);
     reverseInt(columns);
     if (magic != 2051)
-        return std::vector<std::pair<std::vector<double>, int>>();
+        return {};
     std::vector<std::pair<std::vector<double>, int>> data(size, std::pair(std::vector<double>(rows * columns), 0));
 
     for (int image = 0; image < size; ++image) {
@@ -50,7 +50,7 @@ MNISTReader::readFromFile(const std::string &imagesFile, const std::string &labe
     reverseInt(magic);
     reverseInt(labelSize);
     if (magic != 2049 || labelSize != size)
-        return std::vector<std::pair<std::vector<double>, int>>();
+        return {};
 
     for (int image = 0; image < size; ++image) {
         uint8_t label;

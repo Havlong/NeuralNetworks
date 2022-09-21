@@ -165,7 +165,7 @@ Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &
         int resultLabel = (int) (std::max_element(result.begin(), result.end()) - result.begin());
         correctAmount += (resultLabel == y);
 
-        auto[nabla_w, nabla_b] = backPropagate(x, y);
+        auto [nabla_w, nabla_b] = backPropagate(x, y);
         for (int layer = 0; layer < deltaBiases.size(); ++layer) {
             for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
                 deltaBiases[layer][neuron] += nabla_b[layer][neuron];
@@ -182,8 +182,7 @@ Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &
 
     for (int layer = 0; layer < deltaBiases.size(); ++layer) {
         for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
-            layerBiases[layer][neuron] -=
-                    deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
+            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
         }
     }
     for (int layer = 0; layer < deltaWeights.size(); ++layer) {
@@ -242,23 +241,22 @@ Network::backPropagate(const std::vector<double> &test, int label) {
 }
 
 Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
-                 std::vector<std::pair<std::vector<double>, int>> testData,
-                 std::vector<int> layerSizes) : trainingData(std::move(trainingData)), testData(std::move(testData)),
-                                                layerSizes(std::move(layerSizes)) {
+                 std::vector<std::pair<std::vector<double>, int>> testData, std::vector<int> layerSizes) : trainingData(
+        std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)) {
     resizeLayers();
 
     rGen.seed(time(nullptr));
     distribution = std::normal_distribution<>();
 
-    for (auto &layer : layerBiases) {
-        for (double &bias : layer) {
+    for (auto &layer: layerBiases) {
+        for (double &bias: layer) {
             bias = distribution(rGen);
         }
     }
 
     for (auto &layer: layerWeights) {
         for (auto &weights: layer) {
-            for (double &weight : weights) {
+            for (double &weight: weights) {
                 weight = distribution(rGen);
             }
         }

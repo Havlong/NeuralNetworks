@@ -3,8 +3,8 @@
 
 int main() {
 
-    auto[trainingData, testData] = MNISTReader::readDataSet("train-images.idx3-ubyte", "train-labels.idx1-ubyte",
-                                                            "t10k-images.idx3-ubyte", "t10k-labels.idx1-ubyte");
+    auto [trainingData, testData] = MNISTReader::readDataSet("../train-images.idx3-ubyte", "../train-labels.idx1-ubyte",
+                                                             "../t10k-images.idx3-ubyte", "../t10k-labels.idx1-ubyte");
 
     Network deepNet(trainingData, testData, {784, 100, 30, 10});
     deepNet.sgd(40, 10, 0.01);
