@@ -17,6 +17,10 @@ int Network::evaluate() {
 
 void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate, bool verbose) {
     std::cout << std::fixed << std::setprecision(2);
+
+    double bestAccuracy = 0;
+    layer<weights> bestWeights;
+    layer<biases> bestBiases;
     for (int epoch = 1; epoch <= epochsCount; ++epoch) {
         std::shuffle(trainingData.begin(), trainingData.end(), rGen);
         int trainCorrect = 0;
@@ -43,14 +47,24 @@ void Network::sgd(const int &epochsCount, const int &batchSize, const double &le
         if (verbose) std::cout << std::endl;
 
         int testCorrect = evaluate();
+        double trainAccuracy = trainCorrect * 100.0 / (int) (trainingData.size());
+        double testAccuracy = testCorrect * 100.0 / (int) (testData.size());
+
+        if (testAccuracy > bestAccuracy) {
+            bestAccuracy = testAccuracy;
+            bestBiases = layerBiases;
+            bestWeights = layerWeights;
+        }
 
         std::cout << "Epoch #" << epoch << " is completed\n";
-        std::cout << "Success rate on training data is " << trainCorrect * 100.0 / (int) (trainingData.size()) << "%\t";
+        std::cout << "Success rate on training data is " << trainAccuracy << "%\t";
         if (verbose) std::cout << "Correctly predicted: " << trainCorrect << " / " << trainingData.size() << '\n';
-        std::cout << "Success rate on testing data is " << testCorrect * 100.0 / (int) (testData.size()) << "%\t";
+        std::cout << "Success rate on testing data is " << testAccuracy << "%\t";
         if (verbose) std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size() << '\n';
         std::cout << std::endl;
     }
+    layerWeights = bestWeights;
+    layerBiases = bestBiases;
 }
 
 activation Network::feedForward(const activation &input) {
