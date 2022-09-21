@@ -277,4 +277,3 @@ void Network::resizeLayers() {
         }
     }
 }
-
