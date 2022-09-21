@@ -1,6 +1,6 @@
 #include "Network.hpp"
 #include "MNISTReader.hpp"
-#include "QuadraticCost.hpp"
+#include "CrossEntropyCost.hpp"
 
 int main() {
 
@@ -9,9 +9,9 @@ int main() {
                                                              "../MNIST/t10k-images.idx3-ubyte",
                                                              "../MNIST/t10k-labels.idx1-ubyte");
 
-    QuadraticCost costFunction;
+    CrossEntropyCost costFunction;
     Network deepNet(trainingData, testData, {28 * 28, 128, 10}, &costFunction);
-    deepNet.sgd(5, 10, 0.05, true);
+    deepNet.sgd(30, 10, 0.05, true);
 
     return 0;
 }
