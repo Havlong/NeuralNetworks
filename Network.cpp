@@ -3,10 +3,10 @@
 /**
  * @return Sum of two vectors
  */
-std::vector<double> operator+(const std::vector<double> &a, const std::vector<double> &b) {
+vec<double> operator+(const vec<double> &a, const vec<double> &b) {
     if (a.size() != b.size())
         exit(-1);
-    std::vector<double> result(a.size());
+    vec<double> result(a.size());
     for (int i = 0; i < a.size(); ++i) {
         result[i] = a[i] + b[i];
     }
@@ -16,10 +16,10 @@ std::vector<double> operator+(const std::vector<double> &a, const std::vector<do
 /**
  * @return Hadamard product of two vectors
  */
-std::vector<double> operator*(const std::vector<double> &a, const std::vector<double> &b) {
+vec<double> operator*(const vec<double> &a, const vec<double> &b) {
     if (a.size() != b.size())
         exit(-1);
-    std::vector<double> result(a.size());
+    vec<double> result(a.size());
     for (int i = 0; i < a.size(); ++i) {
         result[i] = a[i] * b[i];
     }
@@ -30,10 +30,10 @@ std::vector<double> operator*(const std::vector<double> &a, const std::vector<do
  * Matrix product of vector and matrix
  * @return Result of operation
  */
-std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+vec<double> dot(const mat<double> &m, const vec<double> &v) {
     if (m.size() != v.size())
         exit(-1);
-    std::vector<double> dot(m.front().size());
+    vec<double> dot(m.front().size());
     for (int i = 0; i < (int) dot.size(); ++i) {
         for (int j = 0; j < (int) v.size(); ++j) {
             dot[i] += m[j][i] * v[j];
@@ -42,10 +42,10 @@ std::vector<double> dot(const std::vector<std::vector<double>> &m, const std::ve
     return dot;
 }
 
-std::vector<double> transposedDot(const std::vector<std::vector<double>> &m, const std::vector<double> &v) {
+vec<double> transposedDot(const mat<double> &m, const vec<double> &v) {
     if (m.front().size() != v.size())
         exit(-1);
-    std::vector<double> dot(m.size());
+    vec<double> dot(m.size());
     for (int i = 0; i < (int) m.size(); ++i) {
         for (int j = 0; j < (int) v.size(); ++j) {
             dot[i] += m[i][j] * v[j];
@@ -54,8 +54,8 @@ std::vector<double> transposedDot(const std::vector<std::vector<double>> &m, con
     return dot;
 }
 
-std::vector<std::vector<double>> transposedDot(const std::vector<double> &a, const std::vector<double> &b) {
-    std::vector<std::vector<double>> result(a.size(), std::vector<double>(b.size()));
+mat<double> transposedDot(const vec<double> &a, const vec<double> &b) {
+    mat<double> result(a.size(), std::vector<double>(b.size()));
     for (int i = 0; i < a.size(); ++i) {
         for (int j = 0; j < b.size(); ++j) {
             result[i][j] = a[i] * b[j];
@@ -67,45 +67,46 @@ std::vector<std::vector<double>> transposedDot(const std::vector<double> &a, con
 /**
  * Feed-forwards test data into the neural net and determines the amount of correct answers
  *
- * @return Percentage of correct answers
+ * @return Amount of correct answers
  */
-double Network::evaluate() {
+int Network::evaluate() {
     int amount = 0;
     for (auto &[x, y]: testData) {
         auto result = feedForward(x);
-        int resultLabel = (int) (std::max_element(result.begin(), result.end()) - result.begin());
+        auto resultLabel = (label) (std::max_element(result.begin(), result.end()) - result.begin());
         amount += (resultLabel == y);
     }
-    return amount * 100 / ((double) testData.size());
+    return amount;
 }
 
 void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate) {
+    std::cout << std::fixed << std::setprecision(2);
     for (int epoch = 1; epoch <= epochsCount; ++epoch) {
+        // TODO check why is this commented
 //        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
-        int correctAmount = 0;
-        std::vector<std::pair<std::vector<double>, int>> batch;
+        int trainCorrect = 0;
+        std::vector<std::pair<activation, label>> batch;
         for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
             for (int i = batchStart; i < trainingData.size() && i < batchStart + batchSize; ++i) {
-                batch.push_back(trainingData[i]);
+                batch.emplace_back(trainingData[i]);
             }
-            correctAmount += applyMiniBatch(batch, learningRate);
+            trainCorrect += applyMiniBatch(batch, learningRate);
             batch.clear();
         }
 
-        double successRate = evaluate();
+        int testCorrect = evaluate();
         std::cout << "Epoch #" << epoch << " is completed\n";
-        std::cout << "Success rate on training data is " << correctAmount * 100 / ((double) trainingData.size()) << '%'
-                  << std::endl;
-        std::cout << "Success rate on testing data is " << successRate << "%\n" << std::endl;
+        std::cout << "Success rate on training data is " << trainCorrect * 100.0 / (int) (trainingData.size()) << "%\t";
+        std::cout << "Correctly predicted: " << trainCorrect << " / " << trainingData.size() << '\n';
+        std::cout << "Success rate on testing data is " << testCorrect * 100.0 / (int) (testData.size()) << "%\t";
+        std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size() << '\n' << std::endl;
     }
 }
 
-std::vector<double> Network::feedForward(const std::vector<double> &input) {
-    std::vector<double> currentActivation(input);
+activation Network::feedForward(const activation &input) {
+    activation currentActivation = input;
     for (int layer = 0; layer < (int) layerWeights.size(); ++layer) {
-        auto z = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
-        currentActivation.clear();
-        currentActivation = z;
+        currentActivation = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
     }
     return currentActivation;
 }
@@ -114,8 +115,8 @@ double Network::sigmoid(const double &z) {
     return 1.0 / (1.0 + exp(-z));
 }
 
-std::vector<double> Network::sigmoid(const std::vector<double> &z) {
-    std::vector<double> result(z.size());
+vec<double> Network::sigmoid(const vec<double> &z) {
+    vec<double> result(z.size());
     for (int i = 0; i < result.size(); ++i) {
         result[i] = sigmoid(z[i]);
     }
@@ -126,44 +127,43 @@ double Network::sigmoidPrime(const double &z) {
     return sigmoid(z) * (1.0 - sigmoid(z));
 }
 
-std::vector<double> Network::sigmoidPrime(const std::vector<double> &z) {
-    std::vector<double> result(z.size());
+vec<double> Network::sigmoidPrime(const vec<double> &z) {
+    vec<double> result(z.size());
     for (int i = 0; i < result.size(); ++i) {
         result[i] = sigmoidPrime(z[i]);
     }
     return result;
 }
 
-std::vector<double> Network::costDerivative(const std::vector<double> &output, const int &label) {
-    std::vector<double> result(output.size());
+vec<double> Network::costDerivative(const activation &output, const label &trueLabel) {
+    activation result(output.size());
     for (int i = 0; i < output.size(); ++i) {
-        result[i] = (label == i ? -1 : 0) + output[i];
+        result[i] = (trueLabel == i ? -1 : 0) + output[i];
     }
     return result;
 }
 
-int
-Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, const double &learningRate) {
+int Network::applyMiniBatch(const std::vector<std::pair<activation, label>> &miniBatch, const double &learningRate) {
     // Initialize biases shape
-    std::vector<std::vector<double>> deltaBiases(layerBiases.size());
-    for (int i = 0; i < deltaBiases.size(); ++i) {
-        deltaBiases[i] = std::vector<double>(layerBiases[i].size(), 0.0);
+    layer<biases> deltaBiases;
+    for (auto &biases: layerBiases) {
+        deltaBiases.emplace_back(biases.size(), 0.0);
     }
 
     // Initialize weights shape
-    std::vector<std::vector<std::vector<double>>> deltaWeights(layerWeights.size());
-    for (int i = 0; i < deltaWeights.size(); ++i) {
-        deltaWeights[i] = std::vector<std::vector<double>>(layerWeights[i].size());
-        for (int j = 0; j < deltaWeights[i].size(); ++j) {
-            deltaWeights[i][j] = std::vector<double>(layerWeights[i][j].size(), 0.0);
+    layer<weights> deltaWeights;
+    for (auto &weights: layerWeights) {
+        deltaWeights.emplace_back();
+        for (auto &neuronWeights: weights) {
+            deltaWeights.back().emplace_back(neuronWeights.size(), 0.0);
         }
     }
 
     int correctAmount = 0;
     for (const auto &[x, y]: miniBatch) {
         auto result = feedForward(x);
-        int resultLabel = (int) (std::max_element(result.begin(), result.end()) - result.begin());
-        correctAmount += (resultLabel == y);
+        auto predictedLabel = (label) (std::max_element(result.begin(), result.end()) - result.begin());
+        correctAmount += (predictedLabel == y);
 
         auto [nabla_w, nabla_b] = backPropagate(x, y);
         for (int layer = 0; layer < deltaBiases.size(); ++layer) {
@@ -182,78 +182,79 @@ Network::applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &
 
     for (int layer = 0; layer < deltaBiases.size(); ++layer) {
         for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
-            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / ((double) miniBatch.size()));
+            layerBiases[layer][neuron] -=
+                    deltaBiases[layer][neuron] * (learningRate / static_cast<int>(miniBatch.size()));
         }
     }
     for (int layer = 0; layer < deltaWeights.size(); ++layer) {
         for (int from = 0; from < deltaWeights[layer].size(); ++from) {
             for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
                 layerWeights[layer][from][to] -=
-                        deltaWeights[layer][from][to] * (learningRate / ((double) miniBatch.size()));
+                        deltaWeights[layer][from][to] * (learningRate / static_cast<int>(miniBatch.size()));
             }
         }
     }
     return correctAmount;
 }
 
-std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
-Network::backPropagate(const std::vector<double> &test, int label) {
+std::pair<layer<weights>, layer<biases>> Network::backPropagate(const activation &input, label trueLabel) {
     // Initialize biases shape
-    std::vector<std::vector<double>> nabla_b(layerBiases.size());
-    for (int i = 0; i < nabla_b.size(); ++i) {
-        nabla_b[i] = std::vector<double>(layerBiases[i].size());
+    layer<biases> nabla_b;
+    for (auto &biases: layerBiases) {
+        nabla_b.emplace_back(biases.size(), 0.0);
     }
 
     // Initialize weights shape
-    std::vector<std::vector<std::vector<double>>> nabla_w(layerWeights.size());
-    for (int i = 0; i < nabla_w.size(); ++i) {
-        nabla_w[i] = std::vector<std::vector<double>>(layerWeights[i].size());
-        for (int j = 0; j < nabla_w[i].size(); ++j) {
-            nabla_w[i][j] = std::vector<double>(layerWeights[i][j].size());
+    layer<weights> nabla_w;
+    for (auto &weights: layerWeights) {
+        nabla_w.emplace_back();
+        for (auto &neuronWeights: weights) {
+            nabla_w.back().emplace_back(neuronWeights.size(), 0.0);
         }
     }
 
     // Feed-forward
-    std::vector<double> currentActivation = std::vector<double>(test);
-    std::vector<std::vector<double>> activations = {currentActivation};
-    std::vector<std::vector<double>> layerFunction;
+    activation currentActivation = input;
+    std::vector<activation> layerActivation = {currentActivation};
+    std::vector<activation> layerZ;
     for (int layer = 0; layer < layerWeights.size(); ++layer) {
-        auto z = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
-        layerFunction.push_back(z);
-        currentActivation.clear();
-        currentActivation = sigmoid(z);
-        activations.push_back(currentActivation);
+        currentActivation = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
+        layerZ.emplace_back(currentActivation);
+
+        currentActivation = sigmoid(currentActivation);
+        layerActivation.emplace_back(currentActivation);
     }
 
     // Backwards pass
-    std::vector<double> delta = costDerivative(activations.back(), label) * sigmoidPrime(layerFunction.back());
+    vec<double> delta = costDerivative(layerActivation.back(), trueLabel) * sigmoidPrime(layerZ.back());
     nabla_b.back() = delta;
-    nabla_w.back() = transposedDot(activations[activations.size() - 2], delta);
+    nabla_w.back() = transposedDot(layerActivation[layerActivation.size() - 2], delta);
 
     for (int layer = 2; layer < layerSizes.size(); ++layer) {
-        auto z = layerFunction[layerFunction.size() - layer];
+        auto z = layerZ[layerZ.size() - layer];
         delta = transposedDot(layerWeights[layerWeights.size() - layer + 1], delta) * sigmoidPrime(z);
         nabla_b[nabla_b.size() - layer] = delta;
-        nabla_w[nabla_w.size() - layer] = transposedDot(activations[activations.size() - layer - 1], delta);
+        nabla_w[nabla_w.size() - layer] = transposedDot(layerActivation[layerActivation.size() - layer - 1], delta);
     }
 
     return {nabla_w, nabla_b};
 }
 
-Network::Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
-                 std::vector<std::pair<std::vector<double>, int>> testData, std::vector<int> layerSizes) : trainingData(
+Network::Network(std::vector<std::pair<activation, label>> trainingData,
+                 std::vector<std::pair<activation, label>> testData, layer<int> layerSizes) : trainingData(
         std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)) {
+
     resizeLayers();
 
-    for (auto &layer: layerBiases) {
-        for (double &bias: layer) {
+    for (auto &biases: layerBiases) {
+        for (double &bias: biases) {
             bias = distribution(rGen);
         }
     }
 
-    for (auto &layer: layerWeights) {
-        for (auto &weights: layer) {
-            for (double &weight: weights) {
+    for (auto &weights: layerWeights) {
+        for (auto &neuronWeights: weights) {
+            for (double &weight: neuronWeights) {
                 weight = distribution(rGen);
             }
         }

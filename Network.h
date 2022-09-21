@@ -6,6 +6,17 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
+
+template<typename T> using vec = std::vector<T>;
+template<typename T> using mat = vec<vec<T>>;
+
+template<typename T> using layer = vec<T>;
+
+typedef mat<double> weights;
+typedef vec<double> activation;
+typedef vec<double> biases;
+typedef int label;
 
 class Network {
 private:
@@ -16,39 +27,39 @@ private:
         return std::mt19937(seed);
     }
 
-    std::vector<std::pair<std::vector<double>, int>> trainingData, testData;
-    std::vector<int> layerSizes;
-    std::vector<std::vector<double>> layerBiases;
-    std::vector<std::vector<std::vector<double>>> layerWeights;
+    std::vector<std::pair<activation, label>> trainingData, testData;
+    layer<int> layerSizes;
+    layer<biases> layerBiases;
+    layer<weights> layerWeights;
+
     std::mt19937 rGen = newRandom();
     std::normal_distribution<> distribution = std::normal_distribution<>();
 
-    std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
-    backPropagate(const std::vector<double> &test, int label);
+    std::pair<layer<weights>, layer<biases>> backPropagate(const activation &input, label trueLabel);
 
-    int applyMiniBatch(const std::vector<std::pair<std::vector<double>, int>> &miniBatch, const double &learningRate);
+    int applyMiniBatch(const std::vector<std::pair<activation, label>> &miniBatch, const double &learningRate);
 
     void resizeLayers();
 
-    static std::vector<double> costDerivative(const std::vector<double> &output, const int &label);
+    static vec<double> costDerivative(const activation &output, const label &trueLabel);
 
     static double sigmoid(const double &z);
 
-    static std::vector<double> sigmoid(const std::vector<double> &z);
+    static vec<double> sigmoid(const vec<double> &z);
 
     static double sigmoidPrime(const double &z);
 
-    static std::vector<double> sigmoidPrime(const std::vector<double> &z);
+    static vec<double> sigmoidPrime(const vec<double> &z);
 
 public:
-    std::vector<double> feedForward(const std::vector<double> &input);
+    activation feedForward(const activation &input);
 
     void sgd(const int &epochsCount, const int &batchSize, const double &learningRate);
 
-    double evaluate();
+    int evaluate();
 
-    Network(std::vector<std::pair<std::vector<double>, int>> trainingData,
-            std::vector<std::pair<std::vector<double>, int>> testData, std::vector<int> layerSizes);
+    Network(std::vector<std::pair<activation, label>> trainingData, std::vector<std::pair<activation, label>> testData,
+            layer<int> layerSizes);
 };
 
 
