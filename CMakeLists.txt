@@ -3,4 +3,7 @@ project(NeuralNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(NeuralNetworks main.cpp Network.cpp MNISTReader.cpp MathUtils.cpp CrossEntropyCost.cpp QuadraticCost.cpp)
+add_library(HavlongNN Network.cpp MNISTReader.cpp MathUtils.cpp CrossEntropyCost.cpp QuadraticCost.cpp)
+
+add_executable(NeuralNetworks main.cpp)
+target_link_libraries(NeuralNetworks HavlongNN)
