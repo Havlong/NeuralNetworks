@@ -54,7 +54,7 @@ private:
 public:
     activation feedForward(const activation &input);
 
-    void sgd(const int &epochsCount, const int &batchSize, const double &learningRate);
+    void sgd(const int &epochsCount, const int &batchSize, const double &learningRate, bool verbose);
 
     int evaluate();
 

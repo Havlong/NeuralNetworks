@@ -79,27 +79,40 @@ int Network::evaluate() {
     return amount;
 }
 
-void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate) {
+void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate, bool verbose) {
     std::cout << std::fixed << std::setprecision(2);
     for (int epoch = 1; epoch <= epochsCount; ++epoch) {
-        // TODO check why is this commented
-//        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
+        std::shuffle(trainingData.begin(), trainingData.end(), rGen);
         int trainCorrect = 0;
+
+        double lastPercent = 0.1;
+        std::cout << "Epoch #" << epoch << " starts\n";
+
         std::vector<std::pair<activation, label>> batch;
         for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
+            if (verbose) {
+                while (batchStart / static_cast<double>(trainingData.size()) > lastPercent && lastPercent < 1) {
+                    std::cout << lastPercent * 100 << "%..." << std::flush;
+                    lastPercent += 0.1;
+                }
+            }
+
             for (int i = batchStart; i < trainingData.size() && i < batchStart + batchSize; ++i) {
                 batch.emplace_back(trainingData[i]);
             }
             trainCorrect += applyMiniBatch(batch, learningRate);
             batch.clear();
         }
+        if (verbose) std::cout << std::endl;
 
         int testCorrect = evaluate();
+
         std::cout << "Epoch #" << epoch << " is completed\n";
         std::cout << "Success rate on training data is " << trainCorrect * 100.0 / (int) (trainingData.size()) << "%\t";
-        std::cout << "Correctly predicted: " << trainCorrect << " / " << trainingData.size() << '\n';
+        if (verbose) std::cout << "Correctly predicted: " << trainCorrect << " / " << trainingData.size() << '\n';
         std::cout << "Success rate on testing data is " << testCorrect * 100.0 / (int) (testData.size()) << "%\t";
-        std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size() << '\n' << std::endl;
+        if (verbose) std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size() << '\n';
+        std::cout << std::endl;
     }
 }
 

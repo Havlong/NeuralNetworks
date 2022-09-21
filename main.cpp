@@ -7,7 +7,7 @@ int main() {
                                                              "../t10k-images.idx3-ubyte", "../t10k-labels.idx1-ubyte");
 
     Network deepNet(trainingData, testData, {784, 100, 10});
-    deepNet.sgd(40, 10, 0.1);
+    deepNet.sgd(250, 10, 0.1, false);
 /*
     std::vector<double> one = {0.0, 0.0, 1.0, 0.0, 0.0,
                                0.0, 0.0, 1.0, 0.0, 0.0,
