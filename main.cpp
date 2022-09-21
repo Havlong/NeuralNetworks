@@ -4,8 +4,10 @@
 
 int main() {
 
-    auto [trainingData, testData] = MNISTReader::readDataSet("../train-images.idx3-ubyte", "../train-labels.idx1-ubyte",
-                                                             "../t10k-images.idx3-ubyte", "../t10k-labels.idx1-ubyte");
+    auto [trainingData, testData] = MNISTReader::readDataSet("../MNIST/train-images.idx3-ubyte",
+                                                             "../MNIST/train-labels.idx1-ubyte",
+                                                             "../MNIST/t10k-images.idx3-ubyte",
+                                                             "../MNIST/t10k-labels.idx1-ubyte");
 
     QuadraticCost costFunction;
     Network deepNet(trainingData, testData, {28 * 28, 128, 10}, &costFunction);
