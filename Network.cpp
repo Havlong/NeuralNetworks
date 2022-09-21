@@ -56,7 +56,7 @@ void Network::sgd(const int &epochsCount, const int &batchSize, const double &le
 activation Network::feedForward(const activation &input) {
     activation currentActivation = input;
     for (int layer = 0; layer < (int) layerWeights.size(); ++layer) {
-        currentActivation = dot(layerWeights[layer], currentActivation) + layerBiases[layer];
+        currentActivation = sigmoid(dot(layerWeights[layer], currentActivation) + layerBiases[layer]);
     }
     return currentActivation;
 }
