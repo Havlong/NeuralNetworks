@@ -36,7 +36,9 @@ private:
 
     std::pair<layer<weights>, layer<biases>> backPropagate(const activation &input, label trueLabel);
 
-    int applyMiniBatch(const std::vector<std::pair<activation, label>> &miniBatch, const double &learningRate);
+    int applyMiniBatch(std::vector<std::pair<activation, label>>::const_iterator begin,
+                       const std::vector<std::pair<activation, label>>::const_iterator &end,
+                       const double &learningRate);
 
     void resizeLayers();
 

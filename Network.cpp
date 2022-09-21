@@ -7,8 +7,8 @@
  */
 int Network::evaluate() {
     int amount = 0;
-    for (auto &[x, y]: testData) {
-        auto result = feedForward(x);
+    for (auto &[X, y]: testData) {
+        auto result = feedForward(X);
         auto resultLabel = (label) (std::max_element(result.begin(), result.end()) - result.begin());
         amount += (resultLabel == y);
     }
@@ -24,7 +24,6 @@ void Network::sgd(const int &epochsCount, const int &batchSize, const double &le
         double lastPercent = 0.1;
         std::cout << "Epoch #" << epoch << " starts\n";
 
-        std::vector<std::pair<activation, label>> batch;
         for (int batchStart = 0; batchStart < trainingData.size(); batchStart += batchSize) {
             if (verbose) {
                 while (batchStart / static_cast<double>(trainingData.size()) > lastPercent && lastPercent < 1) {
@@ -32,12 +31,14 @@ void Network::sgd(const int &epochsCount, const int &batchSize, const double &le
                     lastPercent += 0.1;
                 }
             }
+            int batchEnd = batchStart + batchSize;
+            std::vector<std::pair<activation, label>>::const_iterator begin = trainingData.cbegin() + batchStart, end;
 
-            for (int i = batchStart; i < trainingData.size() && i < batchStart + batchSize; ++i) {
-                batch.emplace_back(trainingData[i]);
-            }
-            trainCorrect += applyMiniBatch(batch, learningRate);
-            batch.clear();
+            if (batchEnd < trainingData.size())
+                end = trainingData.cbegin() + batchEnd;
+            else
+                end = trainingData.cend();
+            trainCorrect += applyMiniBatch(begin, end, learningRate);
         }
         if (verbose) std::cout << std::endl;
 
@@ -60,7 +61,11 @@ activation Network::feedForward(const activation &input) {
     return currentActivation;
 }
 
-int Network::applyMiniBatch(const std::vector<std::pair<activation, label>> &miniBatch, const double &learningRate) {
+int Network::applyMiniBatch(std::vector<std::pair<activation, label>>::const_iterator begin,
+                            const std::vector<std::pair<activation, label>>::const_iterator &end,
+                            const double &learningRate) {
+    auto batchSize = static_cast<double>(std::distance(begin, end));
+
     // Initialize biases shape
     layer<biases> deltaBiases;
     for (auto &biases: layerBiases) {
@@ -77,12 +82,14 @@ int Network::applyMiniBatch(const std::vector<std::pair<activation, label>> &min
     }
 
     int correctAmount = 0;
-    for (const auto &[x, y]: miniBatch) {
-        auto result = feedForward(x);
+    while (begin != end) {
+        const auto &[X, y] = *(begin++);
+
+        auto result = feedForward(X);
         auto predictedLabel = (label) (std::max_element(result.begin(), result.end()) - result.begin());
         correctAmount += (predictedLabel == y);
 
-        auto [nabla_w, nabla_b] = backPropagate(x, y);
+        auto [nabla_w, nabla_b] = backPropagate(X, y);
         for (int layer = 0; layer < deltaBiases.size(); ++layer) {
             for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
                 deltaBiases[layer][neuron] += nabla_b[layer][neuron];
@@ -99,15 +106,13 @@ int Network::applyMiniBatch(const std::vector<std::pair<activation, label>> &min
 
     for (int layer = 0; layer < deltaBiases.size(); ++layer) {
         for (int neuron = 0; neuron < deltaBiases[layer].size(); ++neuron) {
-            layerBiases[layer][neuron] -=
-                    deltaBiases[layer][neuron] * (learningRate / static_cast<int>(miniBatch.size()));
+            layerBiases[layer][neuron] -= deltaBiases[layer][neuron] * (learningRate / batchSize);
         }
     }
     for (int layer = 0; layer < deltaWeights.size(); ++layer) {
         for (int from = 0; from < deltaWeights[layer].size(); ++from) {
             for (int to = 0; to < deltaWeights[layer][from].size(); ++to) {
-                layerWeights[layer][from][to] -=
-                        deltaWeights[layer][from][to] * (learningRate / static_cast<int>(miniBatch.size()));
+                layerWeights[layer][from][to] -= deltaWeights[layer][from][to] * (learningRate / batchSize);
             }
         }
     }
@@ -171,9 +176,10 @@ Network::Network(std::vector<std::pair<activation, label>> trainingData,
     }
 
     for (auto &weights: layerWeights) {
+        auto c = sqrt(weights.size());
         for (auto &neuronWeights: weights) {
             for (double &weight: neuronWeights) {
-                weight = distribution(rGen);
+                weight = distribution(rGen) / c;
             }
         }
     }
