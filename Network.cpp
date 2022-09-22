@@ -5,7 +5,7 @@
  *
  * @return Amount of correct answers
  */
-int Network::evaluate() {
+int Network::evaluate(const std::vector<std::pair<activation, label>> &testData) {
     int amount = 0;
     for (auto &[X, y]: testData) {
         auto result = feedForward(X);
@@ -15,12 +15,17 @@ int Network::evaluate() {
     return amount;
 }
 
-void Network::sgd(const int &epochsCount, const int &batchSize, const double &learningRate, bool verbose) {
+void Network::sgd(const std::vector<std::pair<activation, label>> &trainData,
+                  const std::vector<std::pair<activation, label>> &testData, const int &epochsCount,
+                  const int &batchSize, const double &learningRate, bool verbose) {
     std::cout << std::fixed << std::setprecision(2);
 
     double bestAccuracy = 0;
     layer<weights> bestWeights;
     layer<biases> bestBiases;
+
+    std::vector<std::pair<activation, label>> trainingData = trainData;
+
     for (int epoch = 1; epoch <= epochsCount; ++epoch) {
         std::shuffle(trainingData.begin(), trainingData.end(), rGen);
         int trainCorrect = 0;
@@ -46,7 +51,7 @@ void Network::sgd(const int &epochsCount, const int &batchSize, const double &le
         }
         if (verbose) std::cout << std::endl;
 
-        int testCorrect = evaluate();
+        int testCorrect = evaluate(testData);
         double trainAccuracy = trainCorrect * 100.0 / (int) (trainingData.size());
         double testAccuracy = testCorrect * 100.0 / (int) (testData.size());
 
@@ -176,10 +181,8 @@ std::pair<layer<weights>, layer<biases>> Network::backPropagate(const activation
     return {nabla_w, nabla_b};
 }
 
-Network::Network(std::vector<std::pair<activation, label>> trainingData,
-                 std::vector<std::pair<activation, label>> testData, layer<int> layerSizes, Cost *costFunction)
-        : trainingData(std::move(trainingData)), testData(std::move(testData)), layerSizes(std::move(layerSizes)),
-          costFunction(costFunction) {
+Network::Network(layer<int> layerSizes, Cost *costFunction) : layerSizes(std::move(layerSizes)),
+                                                              costFunction(costFunction) {
 
     resizeLayers();
 

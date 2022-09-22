@@ -10,8 +10,8 @@ int main() {
                                                              "../MNIST/t10k-labels.idx1-ubyte");
 
     CrossEntropyCost costFunction;
-    Network deepNet(trainingData, testData, {28 * 28, 128, 10}, &costFunction);
-    deepNet.sgd(30, 10, 0.05, true);
+    Network deepNet({28 * 28, 128, 10}, &costFunction);
+    deepNet.sgd(trainingData, testData, 30, 10, 0.05, true);
 
     return 0;
 }

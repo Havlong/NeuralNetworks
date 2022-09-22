@@ -25,7 +25,6 @@ private:
         return std::mt19937(seed);
     }
 
-    std::vector<std::pair<activation, label>> trainingData, testData;
     layer<int> layerSizes;
     layer<biases> layerBiases;
     layer<weights> layerWeights;
@@ -45,12 +44,13 @@ private:
 public:
     activation feedForward(const activation &input);
 
-    void sgd(const int &epochsCount, const int &batchSize, const double &learningRate, bool verbose);
+    void sgd(const std::vector<std::pair<activation, label>> &trainingData,
+             const std::vector<std::pair<activation, label>> &testData, const int &epochsCount, const int &batchSize,
+             const double &learningRate, bool verbose);
 
-    int evaluate();
+    int evaluate(const std::vector<std::pair<activation, label>> &testData);
 
-    Network(std::vector<std::pair<activation, label>> trainingData, std::vector<std::pair<activation, label>> testData,
-            layer<int> layerSizes, Cost *costFunction);
+    Network(layer<int> layerSizes, Cost *costFunction);
 };
 
 
