@@ -13,5 +13,11 @@ int main() {
     Network deepNet({28 * 28, 128, 10}, &costFunction);
     deepNet.sgd(trainingData, testData, 30, 10, 0.05, true);
 
+    std::cout << "Prediction on random data from test dataset: \n";
+    int i = static_cast<int>(random() % testData.size());
+    activation output = deepNet.feedForward(testData[i].first);
+    std::cout << "Predicted: " << std::max_element(output.begin(), output.end()) - output.begin() << '\n';
+    std::cout << "True Digit was: " << testData[i].second << std::endl;
+
     return 0;
 }
