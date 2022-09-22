@@ -17,6 +17,8 @@ public:
     virtual double delta(double x, double y, double z) = 0;
 
     vec<double> delta(vec<double> x, label y, vec<double> z);
+
+    virtual ~Cost() = default;
 };
 
 class QuadraticCost : public Cost {

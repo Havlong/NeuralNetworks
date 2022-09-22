@@ -8,8 +8,8 @@ int main() {
                                                              "../MNIST/t10k-images.idx3-ubyte",
                                                              "../MNIST/t10k-labels.idx1-ubyte");
 
-    CrossEntropyCost costFunction;
-    Network deepNet({28 * 28, 128, 10}, &costFunction);
+    std::unique_ptr<Cost> cost(new CrossEntropyCost());
+    Network deepNet({28 * 28, 128, 10}, cost.get());
     deepNet.sgd(trainingData, testData, 30, 10, 0.05, true);
 
     std::cout << "Prediction on random data from test dataset: \n";
