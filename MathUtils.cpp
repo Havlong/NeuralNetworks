@@ -3,7 +3,6 @@
  * MathUtils
  *
  * @author Havlong
- * Copyright (c) 2022 Arbina. All rights reserved.
  */
 
 #include "MathUtils.hpp"

@@ -1,10 +1,3 @@
-#ifndef NEURALNETWORKS_MNISTREADER_HPP
-#define NEURALNETWORKS_MNISTREADER_HPP
-
-#include <cstdio>
-#include <string>
-#include <vector>
-
 /**
  * 17.05.2021
  * MNISTReader
@@ -12,6 +5,14 @@
  * @author Havlong
  * @version v1.0
  */
+
+#ifndef NEURALNETWORKS_MNISTREADER_HPP
+#define NEURALNETWORKS_MNISTREADER_HPP
+
+#include <cstdio>
+#include <string>
+#include <vector>
+
 namespace MNISTReader {
 
     std::pair<std::vector<std::pair<std::vector<double>, int>>, std::vector<std::pair<std::vector<double>, int>>>

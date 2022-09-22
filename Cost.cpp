@@ -1,13 +1,35 @@
 /**
- * 21.09.2022
- * CrossEntropyCost
+ * 22.09.2022
+ * Cost
  *
  * @author Havlong
- * Copyright (c) 2022 Arbina. All rights reserved.
  */
+#include "Cost.hpp"
 
-#include "CrossEntropyCost.hpp"
 #include <cfloat>
+
+vec<double> Cost::delta(vec<double> x, label y, vec<double> z) {
+    vec<double> result(x.size());
+    for (int i = 0; i < x.size(); ++i) {
+        result[i] = delta(x[i], (y == i ? 1 : 0), z[i]);
+    }
+    return result;
+}
+
+double QuadraticCost::fn(vec<double> x, label y) {
+    double f = 0;
+    for (int i = 0; i < x.size(); ++i) {
+        if (y != i)
+            f += x[i] * x[i];
+        else
+            f += (1 - x[i]) * (1 - x[i]);
+    }
+    return f / 2;
+}
+
+double QuadraticCost::delta(double x, double y, double z) {
+    return (x - y) * sigmoidPrime(z);
+}
 
 double CrossEntropyCost::fn(vec<double> x, label y) {
     double f = 0;

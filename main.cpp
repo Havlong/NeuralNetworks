@@ -1,6 +1,5 @@
 #include "Network.hpp"
 #include "MNISTReader.hpp"
-#include "CrossEntropyCost.hpp"
 
 int main() {
 

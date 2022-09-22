@@ -3,7 +3,6 @@
  * Cost
  *
  * @author Havlong
- * Copyright (c) 2022 Arbina. All rights reserved.
  */
 
 #ifndef NEURALNETWORKS_COST_HPP
@@ -17,14 +16,22 @@ public:
 
     virtual double delta(double x, double y, double z) = 0;
 
-    vec<double> delta(vec<double> x, label y, vec<double> z) {
-        vec<double> result(x.size());
-        for (int i = 0; i < x.size(); ++i) {
-            result[i] = delta(x[i], (y == i ? 1 : 0), z[i]);
-        }
-        return result;
-    }
+    vec<double> delta(vec<double> x, label y, vec<double> z);
 };
 
+class QuadraticCost : public Cost {
+public:
+    double fn(vec<double> x, label y) override;
+
+    double delta(double x, double y, double z) override;
+};
+
+class CrossEntropyCost : public Cost {
+public:
+    double fn(vec<double> x, label y) override;
+
+    double delta(double x, double y, double z) override;
+
+};
 
 #endif //NEURALNETWORKS_COST_HPP
