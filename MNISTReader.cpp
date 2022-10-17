@@ -66,3 +66,39 @@ MNISTReader::readDataSet(const std::string &trainingImagesFile, const std::strin
                          const std::string &testImagesFile, const std::string &testLabelsFile) {
     return {readFromFile(trainingImagesFile, trainingLabelsFile), readFromFile(testImagesFile, testLabelsFile)};
 }
+
+std::pair<std::vector<double>, int>
+MNISTReader::getRandomSample(const std::vector<std::pair<std::vector<double>, int>> &data) {
+    int i = static_cast<int>(random() % data.size());
+    return data[i];
+}
+
+void MNISTReader::prepare() {
+    srandom(time(nullptr));
+}
+
+std::string MNISTReader::digitToString(const std::pair<std::vector<double>, int> &sample) {
+    std::stringstream stringBuffer;
+    const int rows = 28, columns = 28;
+
+    for (int i = 0; i < columns + 2; ++i) {
+        stringBuffer << '_';
+    }
+    stringBuffer << '\n';
+    for (int i = 0; i < rows; ++i) {
+        stringBuffer << '|';
+        for (int j = 0; j < columns; ++j) {
+            if (sample.first[i * columns + j] < 0.3)
+                stringBuffer << ' ';
+            else
+                stringBuffer << '*';
+        }
+        stringBuffer << "|\n";
+    }
+    stringBuffer << '|';
+    for (int i = 0; i < 28; ++i) {
+        stringBuffer << '_';
+    }
+    stringBuffer << '|' << std::endl;
+    return stringBuffer.str();
+}

@@ -12,8 +12,10 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace MNISTReader {
+    void prepare();
 
     std::pair<std::vector<std::pair<std::vector<double>, int>>, std::vector<std::pair<std::vector<double>, int>>>
     readDataSet(const std::string &trainingImagesFile, const std::string &trainingLabelsFile,
@@ -21,6 +23,10 @@ namespace MNISTReader {
 
     std::vector<std::pair<std::vector<double>, int>>
     readFromFile(const std::string &imagesFile, const std::string &labelsFile);
+
+    std::pair<std::vector<double>, int> getRandomSample(const std::vector<std::pair<std::vector<double>, int>> &data);
+
+    std::string digitToString(const std::pair<std::vector<double>, int> &sample);
 }
 
 
