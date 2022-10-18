@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 
 template<typename T> using layer = vec<T>;
@@ -42,6 +43,10 @@ private:
     void resizeLayers();
 
 public:
+    void save(const std::string &filename);
+
+    void load(const std::string &filename);
+
     activation feedForward(const activation &input);
 
     void sgd(const std::vector<std::pair<activation, label>> &trainingData,

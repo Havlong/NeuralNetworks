@@ -1,5 +1,8 @@
 #include "Network.hpp"
 
+const char separatorSymbol = '|';
+const char splitterSymbol = '>';
+
 /**
  * Feed-forwards test data into the neural net and determines the amount of correct answers
  *
@@ -215,4 +218,87 @@ void Network::resizeLayers() {
             layerWeights[layer][layerFrom].resize(layerSizes[layer + 1]);
         }
     }
+}
+
+template<typename T>
+inline void writeBinary(std::ostream &out, const T &element) {
+    out.write((char *) &element, sizeof(T));
+}
+
+template<typename T>
+inline void readBinary(std::istream &in, T &element) {
+    in.read((char *) &element, sizeof(T));
+}
+
+void Network::save(const std::string &filename) {
+    std::ofstream out(filename, std::ios_base::binary);
+
+    writeBinary(out, layerSizes.size());
+
+    for (const auto &layerSize: layerSizes) {
+        writeBinary(out, layerSize);
+    }
+
+    writeBinary(out, separatorSymbol);
+    for (const auto &weights: layerWeights) {
+        for (const auto &neuronWeights: weights) {
+            for (const double &weight: neuronWeights) {
+                writeBinary(out, weight);
+            }
+            writeBinary(out, splitterSymbol);
+        }
+        writeBinary(out, separatorSymbol);
+    }
+
+    writeBinary(out, separatorSymbol);
+    for (const auto &biases: layerBiases) {
+        for (const double &bias: biases) {
+            writeBinary(out, bias);
+        }
+        writeBinary(out, separatorSymbol);
+    }
+    out.close();
+}
+
+void Network::load(const std::string &filename) {
+    std::ifstream in(filename, std::ios_base::binary);
+    size_t layersAmount;
+    readBinary(in, layersAmount);
+    layer<int> readLayerSizes(layersAmount);
+
+    for (auto &layerSize: readLayerSizes) {
+        readBinary(in, layerSize);
+    }
+    if (readLayerSizes != layerSizes) {
+        std::cerr << "Serialized Network has different parameters of model" << std::endl;
+        return;
+    }
+
+    char separator;
+    char splitter;
+
+    readBinary(in, separator);
+    assert(separator == separatorSymbol);
+    for (auto &weights: layerWeights) {
+        for (auto &neuronWeights: weights) {
+            for (double &weight: neuronWeights) {
+                readBinary(in, weight);
+            }
+            readBinary(in, splitter);
+            assert(splitter == splitterSymbol);
+        }
+        readBinary(in, separator);
+        assert(separator == separatorSymbol);
+    }
+
+    readBinary(in, separator);
+    assert(separator == separatorSymbol);
+    for (auto &biases: layerBiases) {
+        for (double &bias: biases) {
+            readBinary(in, bias);
+        }
+        readBinary(in, separator);
+        assert(separator == separatorSymbol);
+    }
+    in.close();
 }
