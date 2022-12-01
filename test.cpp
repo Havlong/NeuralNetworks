@@ -31,12 +31,18 @@ int main() {
         return -1;
     }
 
+    const auto testStart = std::chrono::steady_clock::now();
     int testCorrect = nn.evaluate(testData);
+
+    const auto testEnd = std::chrono::steady_clock::now();
+    const long long testInMillis = std::chrono::duration_cast<std::chrono::milliseconds>(testEnd - testStart).count();
+
     double testAccuracy = testCorrect * 100.0 / (int) (testData.size());
 
     std::cout << "Success rate on testing data is " << testAccuracy << "%\t";
-    std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size() << '\n';
-    std::cout << std::endl;
+    std::cout << "Correctly predicted: " << testCorrect << " / " << testData.size();
+    std::cout << "\tin " << testInMillis << " ms";
+    std::cout << '\n' << std::endl;
 
     std::cout << "Prediction on random data from test dataset:\n";
     std::pair<activation, label> sample = MNISTReader::getRandomSample(testData);
